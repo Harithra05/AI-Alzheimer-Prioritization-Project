@@ -1,0 +1,155 @@
+data:
+  raw_dir: data/raw
+  processed_dir: data/processed
+  artifacts_dir: artifacts
+  reports_dir: reports
+
+
+# ============================================================
+# FEATURES
+# ============================================================
+
+features:
+
+  # ----------------------------------------------------------
+  # STAGE 1
+  # Pre-MRI clinical prioritization model
+  #
+  # These variables are available before MRI acquisition.
+  #
+  # Verified in the downloaded ADNI files:
+  #   PTGENDER -> sex
+  #   PTEDUCAT -> education
+  #   MMSCORE  -> MMSE
+  #   TOTSCORE -> ADAS-11
+  #   FAQTOTAL -> FAQ
+  #
+  # MoCA is intentionally excluded from the primary model
+  # because it is 69.41% missing in the final 24-month cohort
+  # and 96.9% missing among the positive cases.
+  #
+  # Age and SES are excluded because they are 100% missing
+  # in the constructed cohort.
+  # ----------------------------------------------------------
+
+  stage1:
+    numeric:
+      - education
+      - mmse
+      - adas
+      - faq
+
+    categorical:
+      - sex
+
+
+  # ----------------------------------------------------------
+  # STAGE 3
+  # Post-MRI re-ranking model
+  #
+  # Uses the same pre-MRI clinical variables plus MRI-derived
+  # variables when they are actually available.
+  #
+  # NOTE:
+  # eTIV/nWBV/ASF must be verified in the downloaded MRI
+  # tables before Stage 3 is built/trained.
+  # ----------------------------------------------------------
+
+  stage3:
+    numeric:
+      - education
+      - mmse
+      - adas
+      - faq
+      - eTIV
+      - nWBV
+      - ASF
+
+    categorical:
+      - sex
+
+
+# ============================================================
+# TARGET
+# ============================================================
+
+target:
+
+  # Prospective outcome:
+  #
+  # Among participants who are non-demented at baseline
+  # (CN or MCI) and have >=24 months of follow-up:
+  #
+  #   0 = no dementia within 24 months
+  #   1 = dementia within 24 months
+  #
+  mode: progression_24m
+
+
+# ============================================================
+# PRIORITIZATION
+# ============================================================
+
+priority:
+
+  # Fraction of the validation cohort assigned to the
+  # highest-priority workflow band.
+  high_capacity_fraction: 0.20
+
+  # Fraction assigned to the medium-priority band.
+  # The remaining participants are lower priority.
+  medium_capacity_fraction: 0.30
+
+
+# ============================================================
+# TRAINING
+# ============================================================
+
+training:
+
+  # 60% train
+  # 20% validation
+  # 20% test
+  #
+  # Splitting is performed at participant level.
+  test_size: 0.20
+  validation_size: 0.20
+
+  random_state: 42
+
+  # Evaluate how many positive cases are captured when
+  # prioritizing the top 20% of participants by predicted risk.
+  top_k_fraction: 0.20
+
+
+# ============================================================
+# MODEL SELECTION
+# ============================================================
+
+selection_weights:
+
+  # Precision-recall performance is particularly relevant
+  # because the positive outcome is relatively uncommon.
+  pr_auc: 0.35
+
+  # Measures how many eventual converters are captured
+  # within the prioritized group.
+  top_k_recall: 0.35
+
+  # Probability calibration matters because the output is
+  # intended to represent risk for prioritization.
+  calibration: 0.15
+
+  # Preference for models whose behavior can be explained
+  # to clinicians/research users.
+  interpretability: 0.15
+
+
+# ============================================================
+# API
+# ============================================================
+
+api:
+
+  # Current deployment target is the pre-MRI model.
+  model_stage: stage1

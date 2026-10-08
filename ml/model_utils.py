@@ -1,0 +1,147 @@
+from pathlib import Path
+import json
+import math
+import numpy as np
+import pandas as pd
+import joblib
+
+from sklearn.compose import ColumnTransformer
+from sklearn.pipeline import Pipeline
+from sklearn.impute import SimpleImputer
+from sklearn.preprocessing import OneHotEncoder, StandardScaler
+from sklearn.linear_model import LogisticRegression
+from sklearn.ensemble import RandomForestClassifier
+
+try:
+    from xgboost import XGBClassifier
+except Exception:
+    XGBClassifier = None
+
+def build_preprocessor(numeric, categorical):
+    transformers = []
+    if numeric:
+        transformers.append((
+            "num",
+            Pipeline([
+                ("imputer", SimpleImputer(strategy="median", add_indicator=True)),
+                ("scaler", StandardScaler()),
+            ]),
+            numeric,
+        ))
+    if categorical:
+        transformers.append((
+            "cat",
+            Pipeline([
+                ("imputer", SimpleImputer(strategy="most_frequent")),
+                ("onehot", OneHotEncoder(handle_unknown="ignore", sparse_output=False)),
+            ]),
+            categorical,
+        ))
+    return ColumnTransformer(transformers=transformers, remainder="drop", verbose_feature_names_out=True)
+
+def make_models(random_state=42):
+    models = {
+        "logistic_regression": LogisticRegression(
+            max_iter=3000, class_weight="balanced", solver="lbfgs", random_state=random_state
+        ),
+        "random_forest": RandomForestClassifier(
+            n_estimators=500, min_samples_leaf=3, class_weight="balanced_subsample",
+            n_jobs=-1, random_state=random_state
+        ),
+    }
+    if XGBClassifier is not None:
+        models["xgboost"] = XGBClassifier(
+            n_estimators=500, max_depth=4, learning_rate=0.04,
+            subsample=0.85, colsample_bytree=0.85,
+            min_child_weight=3, reg_lambda=2.0,
+            objective="binary:logistic", eval_metric="logloss",
+            tree_method="hist", n_jobs=4, random_state=random_state
+        )
+    return models
+
+def sigmoid(x):
+    return 1.0 / (1.0 + np.exp(-np.clip(x, -30, 30)))
+
+class PlattCalibrator:
+    def __init__(self):
+        self.model = LogisticRegression(C=1e6, solver="lbfgs")
+        self.fitted = False
+
+    def fit(self, p, y):
+        p = np.clip(np.asarray(p, dtype=float), 1e-6, 1-1e-6)
+        z = np.log(p/(1-p)).reshape(-1,1)
+        y = np.asarray(y, dtype=int)
+        if len(np.unique(y)) < 2:
+            self.fitted = False
+            return self
+        self.model.fit(z, y)
+        self.fitted = True
+        return self
+
+    def transform(self, p):
+        p = np.clip(np.asarray(p, dtype=float), 1e-6, 1-1e-6)
+        if not self.fitted:
+            return p
+        z = np.log(p/(1-p)).reshape(-1,1)
+        return self.model.predict_proba(z)[:,1]
+
+def expected_calibration_error(y, p, n_bins=10):
+    y = np.asarray(y)
+    p = np.asarray(p)
+    bins = np.linspace(0, 1, n_bins+1)
+    ece = 0.0
+    for lo, hi in zip(bins[:-1], bins[1:]):
+        mask = (p >= lo) & (p < hi if hi < 1 else p <= hi)
+        if mask.any():
+            ece += mask.mean() * abs(y[mask].mean() - p[mask].mean())
+    return float(ece)
+
+def top_k_recall(y, p, fraction=0.2):
+    y = np.asarray(y, dtype=int)
+    p = np.asarray(p, dtype=float)
+    k = max(1, int(math.ceil(len(y)*fraction)))
+    idx = np.argsort(-p)[:k]
+    positives = y.sum()
+    if positives == 0:
+        return float("nan")
+    return float(y[idx].sum()/positives)
+
+def priority_thresholds(validation_risk, high_fraction=0.20, medium_fraction=0.30):
+    r = np.asarray(validation_risk, dtype=float)
+    high_thr = float(np.quantile(r, 1-high_fraction))
+    medium_thr = float(np.quantile(r, medium_fraction))
+    return {"high_threshold": high_thr, "medium_threshold": medium_thr}
+
+def priority_from_risk(risk, thresholds):
+    if risk >= thresholds["high_threshold"]:
+        return "HIGH"
+    if risk >= thresholds["medium_threshold"]:
+        return "MEDIUM"
+    return "LOW"
+
+def pathway_for_priority(priority):
+    return {
+        "HIGH": {
+            "stage": "Priority review queue",
+            "workflow": "Prioritize clinician review and, subject to local protocol/capacity, move the patient to the next diagnostic evaluation queue.",
+        },
+        "MEDIUM": {
+            "stage": "Clinician review queue",
+            "workflow": "Route for clinician review and consider additional structured assessment according to the local diagnostic pathway.",
+        },
+        "LOW": {
+            "stage": "Routine review queue",
+            "workflow": "Keep in the routine clinician-led assessment pathway; no automatic diagnostic or treatment recommendation is generated.",
+        },
+    }[priority]
+
+def feature_names_from_pipeline(pipeline):
+    pre = pipeline.named_steps["preprocess"]
+    return list(pre.get_feature_names_out())
+
+def save_bundle(path, bundle):
+    Path(path).parent.mkdir(parents=True, exist_ok=True)
+    joblib.dump(bundle, path)
+
+def load_bundle(path):
+    return joblib.load(path)

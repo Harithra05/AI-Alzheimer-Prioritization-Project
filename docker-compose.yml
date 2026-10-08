@@ -1,0 +1,48 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: alzheimer-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: alzheimer
+      POSTGRES_USER: alzheimer
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change-this-password}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U alzheimer -d alzheimer"]
+      interval: 5s
+      timeout: 5s
+      retries: 20
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: alzheimer-backend
+    restart: unless-stopped
+    environment:
+      DATABASE_URL: postgresql+psycopg://alzheimer:${POSTGRES_PASSWORD:-change-this-password}@postgres:5432/alzheimer
+      MODEL_STAGE: ${MODEL_STAGE:-stage1}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./artifacts:/app/artifacts:ro
+      - ./reports:/app/reports:ro
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: alzheimer-frontend
+    restart: unless-stopped
+    depends_on:
+      - backend
+    ports:
+      - "3000:80"
+
+volumes:
+  postgres_data:

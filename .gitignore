@@ -1,0 +1,23 @@
+__pycache__/
+*.pyc
+.venv/
+node_modules/
+dist/
+.env
+*.log
+data/raw/*.csv
+data/processed/*.csv
+artifacts/*.joblib
+artifacts/*.json
+reports/*.png
+reports/*.csv
+reports/*.json
+# Local backup copies
+*_backup/
+*_phase4_backup/
+
+# Generated research artifacts
+artifacts/*.npz
+
+# Local frontend backup
+frontend/src/*_backup.*

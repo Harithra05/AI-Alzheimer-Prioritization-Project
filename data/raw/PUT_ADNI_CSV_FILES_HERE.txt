@@ -1,0 +1,1 @@
+Unzip your ADNI downloads and copy the CSV files into this folder. Do not commit subject-level ADNI data to a public repository.
