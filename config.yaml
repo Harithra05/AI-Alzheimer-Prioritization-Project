@@ -4,6 +4,11 @@ data:
   artifacts_dir: artifacts
   reports_dir: reports
 
+  # Later-stage measurements (MRI, plasma, PET) are matched to the
+  # participant's baseline diagnosis date: the closest measurement within
+  # this many days is used; later scans are never used as baseline inputs.
+  modality_window_days: 180
+
 
 # ============================================================
 # FEATURES
@@ -12,58 +17,149 @@ data:
 features:
 
   # ----------------------------------------------------------
-  # STAGE 1
-  # Pre-MRI clinical prioritization model
+  # STAGE 1 - Cognitive screening (pre-MRI)
   #
-  # These variables are available before MRI acquisition.
-  #
-  # Verified in the downloaded ADNI files:
-  #   PTGENDER -> sex
-  #   PTEDUCAT -> education
-  #   MMSCORE  -> MMSE
-  #   TOTSCORE -> ADAS-11
-  #   FAQTOTAL -> FAQ
-  #
-  # MoCA is intentionally excluded from the primary model
-  # because it is 69.41% missing in the final 24-month cohort
-  # and 96.9% missing among the positive cases.
-  #
-  # Age and SES are excluded because they are 100% missing
-  # in the constructed cohort.
+  # Demographics, cognitive/functional tests and baseline
+  # comorbidities (architecture slide: "test scores + co-morbidities"):
+  #   age      derived from PTDOB and the baseline diagnosis date
+  #   bmi/sbp  VITALS (units converted), gds = Geriatric Depression Scale
+  #   hx_*     MEDHIST flags (1 = yes)
+  # MoCA is excluded (69% missing; contextual only). CDR is never used.
   # ----------------------------------------------------------
 
   stage1:
     numeric:
+      - age
       - education
       - mmse
       - adas
       - faq
+      - bmi
+      - sbp
+      - gds
+      - hx_cardiovascular
+      - hx_endocrine
+      - hx_psychiatric
+      - hx_neurologic
+      - hx_smoking
 
     categorical:
       - sex
 
 
   # ----------------------------------------------------------
-  # STAGE 3
-  # Post-MRI re-ranking model
+  # STAGE 2 - Blood-based biomarkers
   #
-  # Uses the same pre-MRI clinical variables plus MRI-derived
-  # variables when they are actually available.
-  #
-  # NOTE:
-  # eTIV/nWBV/ASF must be verified in the downloaded MRI
-  # tables before Stage 3 is built/trained.
+  # Participants with any plasma biomarker within the baseline window:
+  #   UPENN Fujirebio/Quanterix: ptau217, ab42_ab40, nfl, gfap
+  #   Gothenburg p-tau181 (ptau181), Blennow NfL (nfl_legacy; older
+  #   assay on a different scale, kept separate from nfl)
+  #   apoe4 = number of APOE e4 alleles (APOERES)
   # ----------------------------------------------------------
 
-  stage3:
+  stage2:
     numeric:
+      - age
       - education
       - mmse
       - adas
       - faq
+      - bmi
+      - sbp
+      - gds
+      - hx_cardiovascular
+      - hx_endocrine
+      - hx_psychiatric
+      - hx_neurologic
+      - hx_smoking
+      - apoe4
+      - ptau217
+      - ab42_ab40
+      - nfl
+      - gfap
+      - ptau181
+      - nfl_legacy
+
+    categorical:
+      - sex
+
+
+  # ----------------------------------------------------------
+  # STAGE 3 - MRI evaluation
+  #
+  # eTIV / nWBV / ASF / hippocampus_icv derived from FreeSurfer 7
+  # (UCSFFSX7). Blood biomarkers are used when available.
+  # ----------------------------------------------------------
+
+  stage3:
+    numeric:
+      - age
+      - education
+      - mmse
+      - adas
+      - faq
+      - bmi
+      - sbp
+      - gds
+      - hx_cardiovascular
+      - hx_endocrine
+      - hx_psychiatric
+      - hx_neurologic
+      - hx_smoking
+      - apoe4
+      - ptau217
+      - ab42_ab40
+      - nfl
+      - gfap
+      - ptau181
+      - nfl_legacy
       - eTIV
       - nWBV
       - ASF
+      - hippocampus_icv
+
+    categorical:
+      - sex
+
+
+  # ----------------------------------------------------------
+  # STAGE 4 - PET imaging
+  #
+  #   amyloid_centiloid  UC Berkeley amyloid PET (harmonised across
+  #                      florbetapir / florbetaben / NAV4694 tracers)
+  #   fdg                UC Berkeley FDG-PET MetaROI (glucose metabolism)
+  # Tau PET is not used: only 5 converters had a tau scan near baseline.
+  # Tracer-specific amyloid SUVR is not used (not comparable across tracers).
+  # ----------------------------------------------------------
+
+  stage4:
+    numeric:
+      - age
+      - education
+      - mmse
+      - adas
+      - faq
+      - bmi
+      - sbp
+      - gds
+      - hx_cardiovascular
+      - hx_endocrine
+      - hx_psychiatric
+      - hx_neurologic
+      - hx_smoking
+      - apoe4
+      - ptau217
+      - ab42_ab40
+      - nfl
+      - gfap
+      - ptau181
+      - nfl_legacy
+      - eTIV
+      - nWBV
+      - ASF
+      - hippocampus_icv
+      - amyloid_centiloid
+      - fdg
 
     categorical:
       - sex
@@ -116,6 +212,12 @@ training:
   validation_size: 0.20
 
   random_state: 42
+
+  # Add "was missing" indicator features during imputation.
+  # Off: with very few missing values the indicator learns spurious
+  # rules (in ADNI, missing ADAS/FAQ -> low risk), which would push
+  # patients with incomplete records down the queue.
+  missing_indicators: false
 
   # Evaluate how many positive cases are captured when
   # prioritizing the top 20% of participants by predicted risk.
