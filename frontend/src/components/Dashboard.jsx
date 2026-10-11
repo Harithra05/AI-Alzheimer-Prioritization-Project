@@ -15,9 +15,10 @@ export default function Dashboard({ modelInfo, onNavigate }) {
         Diagnostic Prioritization
       </h1>
       <p className="hero-description">
-        Calibrated risk estimation, SHAP explanations and capacity-aware
-        prioritization along a progressive diagnostic pathway: cognitive
-        screening → blood biomarkers → MRI → PET.
+        Who should be tested first, and how fast will they decline? Calibrated
+        risk estimation, TEMPO decline-rate prediction, SHAP explanations and
+        capacity-aware prioritization along a progressive diagnostic pathway:
+        cognitive screening → blood biomarkers → MRI → PET.
       </p>
 
       <div className="dashboard-stats">

@@ -2,9 +2,15 @@
 
 Clinical decision-support **research prototype** that ranks patients for further
 Alzheimer's diagnostic evaluation under limited capacity (blood tests, MRI, PET,
-clinician time). It estimates a calibrated 24-month progression risk, assigns a
-LOW / MEDIUM / HIGH priority tier, explains every score with SHAP, and routes
-patients along a progressive diagnostic pathway.
+clinician time). It answers two questions for every patient:
+
+1. **Who should be tested first?** A calibrated 24-month progression risk with a
+   LOW / MEDIUM / HIGH priority tier, routed along a progressive diagnostic pathway.
+2. **How fast will they decline?** **TEMPO** (*Trajectory Estimation Model for
+   Progression Outcomes*) predicts the yearly change in CDR Sum of Boxes over the
+   next 36 months, with a prediction interval and a STABLE / MODERATE / FAST tier.
+
+Every estimate is explained with SHAP.
 
 > It does **not** diagnose Alzheimer's disease and does **not** recommend
 > treatment. Every output supports clinician-led decisions.
@@ -24,8 +30,10 @@ Stage 2  Blood biomarkers    ──► refined risk ──► HIGH? escalate
 Stage 3  MRI evaluation      ──► refined risk ──► HIGH? escalate
 Stage 4  PET imaging         ──► refined risk ──► specialist review
         │
-        ├─ SHAP explanation of each score
-        ├─ score, tier, reasoning and pathway trace saved to PostgreSQL
+        ├─ TEMPO: expected CDR-SB change per year + speed tier
+        ├─ combined outlook (risk × speed), e.g. "Test first, refer urgently"
+        ├─ SHAP explanation of each score and rate
+        ├─ score, tier, rate, reasoning and pathway trace saved to PostgreSQL
         └─ capacity-aware triage queue, re-ranked whenever new data arrives
 ```
 
@@ -51,6 +59,16 @@ trained:
 | 4 PET | 1,365 | 71 | 0.895 | 79% |
 
 Tau PET is not used: only 5 converters had a tau scan near baseline.
+
+**TEMPO on ADNI** (yearly CDR-SB change; tiers STABLE < 0.3, MODERATE 0.3–1.0,
+FAST ≥ 1.0 points/year):
+
+| Stage | Participants (fast) | Test MAE (mean baseline) | Fast decliners in top 20% | 80% interval |
+|---|---|---|---|---|
+| 1 Screening | 1,287 (148) | 0.39 (0.47) | 76% | ±0.53/yr |
+| 2 Blood | 804 (76) | 0.35 (0.42) | 80% | ±0.52/yr |
+| 3 MRI | 1,272 (146) | 0.31 (0.44) | 90% | ±0.57/yr |
+| 4 PET | 1,021 (97) | 0.32 (0.40) | 90% | ±0.53/yr |
 
 **ADNI-specific handling:**
 - Negative missing codes (`-1`, `-4`, `-5`) become missing values; negative Centiloids are kept.
@@ -105,6 +123,8 @@ scripts/
   07_feature_distribution_analysis.py
   08_uncertainty_analysis.py     bootstrap refits -> <stage>_bootstrap_predictions.npz
   09_sensitivity_analysis.py     one-at-a-time input sensitivity
+  10_build_tempo_target.py       TEMPO target: CDR-SB slope over 0-36 months
+  11_train_tempo.py              TEMPO models per stage + prediction intervals
 ml/                         preprocessing, models, calibration, metrics, SHAP
 backend/                    FastAPI app, auth, audit log, pathway + model registry
 frontend/                   React (Vite) clinician dashboard
@@ -138,6 +158,11 @@ for s in stage1 stage2 stage3 stage4; do
   python scripts/04_sanity_check.py --stage $s
 done
 
+python scripts/10_build_tempo_target.py                 # TEMPO (how fast?)
+for s in stage1 stage2 stage3 stage4; do
+  python scripts/11_train_tempo.py --stage $s
+done
+
 python scripts/05_evaluate_prioritization.py            # reports/prioritized_cohort.csv etc.
 python scripts/06_data_quality_analysis.py
 python scripts/07_feature_distribution_analysis.py
@@ -157,7 +182,7 @@ them says anything about real patients.
 ```bash
 python scripts/00_make_synthetic_data.py --out data/raw_synthetic
 export ALZ_RAW_DIR=data/raw_synthetic       # PowerShell: $env:ALZ_RAW_DIR="data/raw_synthetic"
-# then run the same 02/03/05/08 commands as above
+# then run the same 02/03/10/11/05/08 commands as above
 ```
 
 `ALZ_RAW_DIR`, `ALZ_PROCESSED_DIR`, `ALZ_ARTIFACTS_DIR` and `ALZ_REPORTS_DIR` override

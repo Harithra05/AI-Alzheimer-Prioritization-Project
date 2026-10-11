@@ -2,7 +2,7 @@ import React, { useState } from "react";
 import { api } from "../api";
 import { STAGES, pct, priorityClass, toNumberOrNull } from "../fields";
 import StageInputs from "./StageInputs";
-import { PathwayTrace, QualityPanel, ShapChart, UncertaintyPanel } from "./ResultViews";
+import { DeclinePanel, PathwayTrace, QualityPanel, ShapChart, UncertaintyPanel } from "./ResultViews";
 
 const EMPTY = {
   patient_ref: "",
@@ -198,6 +198,23 @@ export default function Assessment({ modelInfo }) {
             <div className="section-heading">
               <div>
                 <span className="section-number">04</span>
+                <h2>How fast? Expected decline (TEMPO)</h2>
+              </div>
+              <span className="stage-tag">36-MONTH RATE</span>
+            </div>
+            <DeclinePanel decline={result.decline} priority={result.prediction.priority} />
+            {result.decline?.explanation && (
+              <>
+                <h3>Why this rate? (SHAP)</h3>
+                <ShapChart explanation={result.decline.explanation} />
+              </>
+            )}
+          </section>
+
+          <section className="card">
+            <div className="section-heading">
+              <div>
+                <span className="section-number">05</span>
                 <h2>Uncertainty Analysis</h2>
               </div>
             </div>

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from "react";
 import { api } from "../api";
 import { STAGES, STAGE_NAMES, pct, toNumberOrNull } from "../fields";
 import StageInputs from "./StageInputs";
-import { PathwayTrace, PriorityBadge, ShapChart } from "./ResultViews";
+import { DeclinePanel, PathwayTrace, PriorityBadge, ShapChart, SpeedBadge, slopeText } from "./ResultViews";
 
 function NewDataForm({ patient, capacity, onDone, onCancel }) {
   const nextIndex = Math.min(STAGES.indexOf(patient.current_stage) + 1, STAGES.length - 1);
@@ -199,6 +199,7 @@ export default function Queue() {
                   <th>Stage</th>
                   <th>Risk</th>
                   <th>Priority</th>
+                  <th>Decline (TEMPO)</th>
                   <th>Next step</th>
                   <th>Capacity</th>
                   <th />
@@ -216,6 +217,12 @@ export default function Queue() {
                       <td>{STAGE_NAMES[patient.current_stage]}</td>
                       <td>{pct(patient.risk_score, 2)}</td>
                       <td><PriorityBadge priority={patient.priority} /></td>
+                      <td>
+                        <SpeedBadge tier={patient.decline?.speed_tier} />
+                        {patient.decline && (
+                          <small className="cell-sub">{slopeText(patient.decline.predicted_cdrsb_per_year)}/yr</small>
+                        )}
+                      </td>
                       <td className="cell-small">{patient.next_step?.action || "—"}</td>
                       <td>{patient.selected_for_capacity ? "SELECTED" : "—"}</td>
                       <td className="row-actions">
@@ -233,7 +240,7 @@ export default function Queue() {
                     </tr>
                     {expanded === patient.id && (
                       <tr className="detail-row">
-                        <td colSpan={8}>
+                        <td colSpan={9}>
                           {editing === patient.id ? (
                             <NewDataForm
                               patient={patient}
@@ -244,6 +251,8 @@ export default function Queue() {
                           ) : detail && detail.id === patient.id ? (
                             <div className="patient-detail">
                               <PathwayTrace trace={detail.pathway?.trace || []} nextStep={detail.next_step} />
+                              <h3>Expected decline (TEMPO)</h3>
+                              <DeclinePanel decline={detail.pathway?.decline} priority={detail.priority} />
                               <h3>SHAP explanation</h3>
                               <ShapChart explanation={detail.explanation} />
                             </div>

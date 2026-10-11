@@ -9,13 +9,14 @@ from sklearn.compose import ColumnTransformer
 from sklearn.pipeline import Pipeline
 from sklearn.impute import SimpleImputer
 from sklearn.preprocessing import OneHotEncoder, StandardScaler
-from sklearn.linear_model import LogisticRegression
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.linear_model import LogisticRegression, Ridge
+from sklearn.ensemble import RandomForestClassifier, RandomForestRegressor
 
 try:
-    from xgboost import XGBClassifier
+    from xgboost import XGBClassifier, XGBRegressor
 except Exception:
     XGBClassifier = None
+    XGBRegressor = None
 
 def build_preprocessor(numeric, categorical, missing_indicators=False):
     """Median/mode imputation, scaling and one-hot encoding.
@@ -65,6 +66,30 @@ def make_models(random_state=42):
             tree_method="hist", n_jobs=4, random_state=random_state
         )
     return models
+
+def make_regressors(random_state=42):
+    """Candidate models for TEMPO (CDR-SB points per year)."""
+    models = {
+        "ridge_regression": Ridge(alpha=1.0),
+        "random_forest": RandomForestRegressor(
+            n_estimators=500, min_samples_leaf=5, n_jobs=-1, random_state=random_state
+        ),
+    }
+    if XGBRegressor is not None:
+        models["xgboost"] = XGBRegressor(
+            n_estimators=400, max_depth=3, learning_rate=0.03,
+            subsample=0.85, colsample_bytree=0.85, min_child_weight=5, reg_lambda=2.0,
+            objective="reg:squarederror", tree_method="hist", n_jobs=4, random_state=random_state,
+        )
+    return models
+
+def speed_tier(slope, thresholds):
+    """Decline-speed tier for a predicted CDR-SB slope (points per year)."""
+    if slope >= thresholds["fast"]:
+        return "FAST"
+    if slope >= thresholds["moderate"]:
+        return "MODERATE"
+    return "STABLE"
 
 def sigmoid(x):
     return 1.0 / (1.0 + np.exp(-np.clip(x, -30, 30)))
