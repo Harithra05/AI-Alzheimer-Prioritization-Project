@@ -38,6 +38,9 @@ def workspace(tmp_path_factory):
     for stage in STAGES:
         run("02_build_dataset.py", "--stage", stage, env=env)
         run("03_train.py", "--stage", stage, env=env)
+    run("10_build_tempo_target.py", env=env)
+    for stage in STAGES:
+        run("11_train_tempo.py", "--stage", stage, env=env)
     run("08_uncertainty_analysis.py", "--stage", "stage1", "--replicates", "20", env=env)
     run("05_evaluate_prioritization.py", env=env)
 
