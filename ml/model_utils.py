@@ -1,3 +1,4 @@
+import os
 from pathlib import Path
 import json
 import math
@@ -47,6 +48,12 @@ def build_preprocessor(numeric, categorical, missing_indicators=False):
         ))
     return ColumnTransformer(transformers=transformers, remainder="drop", verbose_feature_names_out=True)
 
+def _n_jobs(default):
+    """Worker count for tree models. IDEA_N_JOBS lets an HPC job match its CPU allocation."""
+    value = os.environ.get("IDEA_N_JOBS")
+    return int(value) if value else default
+
+
 def make_models(random_state=42):
     models = {
         "logistic_regression": LogisticRegression(
@@ -54,7 +61,7 @@ def make_models(random_state=42):
         ),
         "random_forest": RandomForestClassifier(
             n_estimators=500, min_samples_leaf=3, class_weight="balanced_subsample",
-            n_jobs=-1, random_state=random_state
+            n_jobs=_n_jobs(-1), random_state=random_state
         ),
     }
     if XGBClassifier is not None:
@@ -63,7 +70,7 @@ def make_models(random_state=42):
             subsample=0.85, colsample_bytree=0.85,
             min_child_weight=3, reg_lambda=2.0,
             objective="binary:logistic", eval_metric="logloss",
-            tree_method="hist", n_jobs=4, random_state=random_state
+            tree_method="hist", n_jobs=_n_jobs(4), random_state=random_state
         )
     return models
 
@@ -72,14 +79,14 @@ def make_regressors(random_state=42):
     models = {
         "ridge_regression": Ridge(alpha=1.0),
         "random_forest": RandomForestRegressor(
-            n_estimators=500, min_samples_leaf=5, n_jobs=-1, random_state=random_state
+            n_estimators=500, min_samples_leaf=5, n_jobs=_n_jobs(-1), random_state=random_state
         ),
     }
     if XGBRegressor is not None:
         models["xgboost"] = XGBRegressor(
             n_estimators=400, max_depth=3, learning_rate=0.03,
             subsample=0.85, colsample_bytree=0.85, min_child_weight=5, reg_lambda=2.0,
-            objective="reg:squarederror", tree_method="hist", n_jobs=4, random_state=random_state,
+            objective="reg:squarederror", tree_method="hist", n_jobs=_n_jobs(4), random_state=random_state,
         )
     return models
 

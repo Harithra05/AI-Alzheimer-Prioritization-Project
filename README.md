@@ -130,6 +130,9 @@ backend/                    FastAPI app, auth, audit log, pathway + model regist
 frontend/                   React (Vite) clinician dashboard
 tests/                      pytest: full pipeline on synthetic data + API
 deploy/aws-ec2.md           single-EC2 Docker deployment
+deploy/docker-local.md      step-by-step Docker run on a laptop
+hpc/                        SLURM + Apptainer training on an HPC cluster
+Dockerfile.train            training image (also used by the HPC jobs)
 ```
 
 ---
@@ -225,8 +228,16 @@ docker compose up --build
 
 This runs three containers: `frontend` (nginx, http://localhost:3000), `backend`
 (FastAPI, http://localhost:8000/docs) and `postgres`. `artifacts/`, `reports/` and
-`data/processed/` are mounted read-only, never baked into images. For AWS, see
+`data/processed/` are mounted read-only, never baked into images. Step-by-step
+laptop guide: [`deploy/docker-local.md`](deploy/docker-local.md). For AWS, see
 [`deploy/aws-ec2.md`](deploy/aws-ec2.md).
+
+### Training on an HPC cluster
+
+The training pipeline runs as SLURM jobs in an Apptainer container: the four
+stages train in parallel as a job array, tree models use every allocated core,
+and the 500 bootstrap refits are spread across the node (4.6× faster on 4 cores
+for the random-forest stage, with identical results). See [`hpc/README.md`](hpc/README.md).
 
 ## 5. Tests
 
