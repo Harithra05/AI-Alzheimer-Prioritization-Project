@@ -74,11 +74,6 @@ export default function Dashboard({ modelInfo, onNavigate }) {
         </button>
       </div>
 
-      <div className="research-notice">
-        <strong>Research prototype:</strong> This dashboard supports research
-        prioritization. It does not provide a medical diagnosis or treatment
-        recommendation.
-      </div>
     </section>
   );
 }

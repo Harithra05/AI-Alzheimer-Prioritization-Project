@@ -97,19 +97,6 @@ function App() {
         {page === "model" && <ModelInfo modelInfo={modelInfo} />}
         {page === "audit" && isAdmin && <AuditLog />}
 
-        <section className="card final-notice">
-          <h2>Research Prototype Notice</h2>
-          <p>
-            This clinical decision-support research prototype estimates
-            progression-related research risk from retrospective ADNI data to
-            support prioritization for further diagnostic evaluation.
-          </p>
-          <p>
-            It does not provide a medical diagnosis, does not recommend
-            treatment, and does not replace clinician judgment, local protocols,
-            or established diagnostic evaluation.
-          </p>
-        </section>
       </main>
 
       <footer>

@@ -271,11 +271,6 @@ export default function Queue() {
             </table>
           </div>
 
-          <div className="research-notice">
-            <strong>Research resource-allocation simulation:</strong> rankings
-            and capacity selection support clinician-led workflows. They do not
-            autonomously determine who receives care or diagnostic testing.
-          </div>
         </div>
       )}
     </section>
