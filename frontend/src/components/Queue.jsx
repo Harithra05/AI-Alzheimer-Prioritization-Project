@@ -140,12 +140,15 @@ export default function Queue() {
         </div>
         <span className="stage-tag">TRIAGE</span>
       </div>
-      <p className="section-description">
-        Saved assessments ranked by calibrated risk. Enter the number of
-        available diagnostic slots (e.g. blood tests, MRI or PET scans) to
-        simulate capacity. Adding new results to a patient re-scores them and
-        re-ranks the whole queue.
-      </p>
+      <div className="intro-row">
+        <p className="section-description">
+          Saved assessments ranked by calibrated risk. Enter the number of
+          available diagnostic slots (e.g. blood tests, MRI or PET scans) to
+          simulate capacity. Adding new results to a patient re-scores them and
+          re-ranks the whole queue.
+        </p>
+        <img className="section-illustration" src="/images/patient-puzzle.webp" alt="" />
+      </div>
 
       <div className="ranking-controls">
         <label>

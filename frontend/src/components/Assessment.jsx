@@ -70,12 +70,15 @@ export default function Assessment({ modelInfo }) {
           </div>
           <span className="stage-tag">PROGRESSIVE PATHWAY</span>
         </div>
-        <p className="section-description">
-          Enter Stage-1 screening results. If the patient already has blood
-          biomarker, MRI or PET results, open that stage and add them. The
-          deepest stage with results and a trained model determines the
-          priority tier.
-        </p>
+        <div className="intro-row">
+          <p className="section-description">
+            Enter Stage-1 screening results. If the patient already has blood
+            biomarker, MRI or PET results, open that stage and add them. The
+            deepest stage with results and a trained model determines the
+            priority tier.
+          </p>
+          <img className="section-illustration" src="/images/patient-gears.webp" alt="" />
+        </div>
 
         {error && <div className="alert error"><strong>Error:</strong> {error}</div>}
 

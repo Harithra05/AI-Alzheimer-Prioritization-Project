@@ -53,8 +53,10 @@ function App() {
       <nav className="topnav">
         <div className="topnav-inner">
           <div className="brand">
-            <strong>Alzheimer's Diagnostic Prioritization</strong>
-            <span>Research prototype</span>
+            <div>
+              <strong>IDEA</strong>
+              <span>Intelligent Detection of Early Alzheimer's</span>
+            </div>
           </div>
           <div className="nav-links">
             {PAGES.filter((p) => !p.admin || isAdmin).map((p) => (
@@ -111,8 +113,8 @@ function App() {
       </main>
 
       <footer>
-        AI-Driven Prioritization for Early Alzheimer's Diagnostic Pathways ·
-        Research Prototype
+        IDEA · AI-Driven Prioritization for Early Alzheimer's Diagnostic
+        Pathways · Research Prototype
       </footer>
     </div>
   );

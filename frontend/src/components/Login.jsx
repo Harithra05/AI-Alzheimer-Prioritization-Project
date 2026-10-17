@@ -23,9 +23,15 @@ export default function Login({ onLogin }) {
 
   return (
     <div className="login-page">
+      <div className="login-shell">
+      <div className="login-visual">
+        <img src="/images/patient-question.webp" alt="" />
+        <h2>IDEA</h2>
+        <p>Intelligent Detection of Early Alzheimer's</p>
+      </div>
       <form className="card login-card" onSubmit={submit}>
         <div className="eyebrow">CLINICAL DECISION-SUPPORT RESEARCH PROTOTYPE</div>
-        <h1>AI-Driven Alzheimer's Diagnostic Prioritization</h1>
+        <h1>Welcome back</h1>
         <p className="section-description">
           Sign in with your clinician account. Sessions use signed JSON Web
           Tokens and every action is audit-logged.
@@ -56,6 +62,7 @@ export default function Login({ onLogin }) {
           {loading ? "Signing in..." : "Sign in"}
         </button>
       </form>
+      </div>
     </div>
   );
 }
