@@ -25,7 +25,7 @@ export default function Login({ onLogin }) {
     <div className="login-page">
       <div className="login-shell">
       <div className="login-visual">
-        <img src="/images/patient-question.webp" alt="" />
+        <img src="/images/patient-bulb.webp" alt="" />
         <div className="login-brand">
           <img className="login-logo" src="/images/idea-logo.png" alt="IDEA logo" />
           <h2>IDEA</h2>
