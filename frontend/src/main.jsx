@@ -53,6 +53,9 @@ function App() {
       <nav className="topnav">
         <div className="topnav-inner">
           <div className="brand">
+            <div className="brand-logo">
+              <img src="/images/idea-logo.png" alt="IDEA logo" />
+            </div>
             <div>
               <strong>IDEA</strong>
               <span>Intelligent Detection of Early Alzheimer's</span>

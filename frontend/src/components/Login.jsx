@@ -26,7 +26,10 @@ export default function Login({ onLogin }) {
       <div className="login-shell">
       <div className="login-visual">
         <img src="/images/patient-question.webp" alt="" />
-        <h2>IDEA</h2>
+        <div className="login-brand">
+          <img className="login-logo" src="/images/idea-logo.png" alt="IDEA logo" />
+          <h2>IDEA</h2>
+        </div>
         <p>Intelligent Detection of Early Alzheimer's</p>
       </div>
       <form className="card login-card" onSubmit={submit}>

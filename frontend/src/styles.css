@@ -216,15 +216,21 @@ p {
   min-width: 0;
 }
 
-.brand::before {
-  content: "";
+.brand-logo {
   flex: 0 0 auto;
-  width: 34px;
-  height: 34px;
-  background:
-    radial-gradient(circle at 30% 30%, rgba(255, 255, 255, 0.95) 0 18%, transparent 19%),
-    linear-gradient(135deg, var(--sky) 0%, #ffffff 100%);
-  clip-path: polygon(0 0, 100% 0, 100% 72%, 72% 100%, 0 100%);
+  display: grid;
+  place-items: center;
+  width: 60px;
+  height: 44px;
+  padding: 3px 4px;
+  background: rgba(255, 255, 255, 0.95);
+  box-shadow: 0 8px 18px -10px rgba(0, 0, 0, 0.6);
+}
+
+.brand-logo img {
+  display: block;
+  width: 100%;
+  height: auto;
 }
 
 .brand strong {
@@ -864,6 +870,27 @@ main > .alert {
   width: 100%;
 }
 
+.login-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 14px;
+  margin-top: 8px;
+}
+
+.login-brand h2 {
+  margin: 0;
+}
+
+.login-visual .login-logo {
+  width: 92px;
+  height: auto;
+  margin: 0;
+  mix-blend-mode: normal;
+  -webkit-mask-image: none;
+  mask-image: none;
+  animation: none;
+}
+
 /* =========================
    DASHBOARD
    ========================= */
@@ -893,6 +920,7 @@ main > .alert {
   font-size: 26px;
   font-weight: 700;
   letter-spacing: 0;
+  line-height: 1.25;
   color: var(--vest-ink);
   -webkit-text-fill-color: var(--vest-ink);
 }
